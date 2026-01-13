@@ -1,0 +1,59 @@
+// Prisma Schema for Shipping Dashboard
+// Database: SQLite (development)
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Purchase Order - represents a customer order that may have multiple shipments
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  orderNumber String   @unique
+  status      String   // "PENDING", "PARTIAL", "FULFILLED", "CANCELLED"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  metadata    String?  // JSON string for extensibility
+
+  shipments Shipment[]
+
+  @@map("purchase_orders")
+}
+
+/// Shipment - a physical package sent to fulfill part or all of an order
+model Shipment {
+  id             String   @id @default(uuid())
+  trackingNumber String   @unique
+  carrier        String   // "UPS", "USPS", "FEDEX", etc.
+  status         String   // "LABEL_CREATED", "TRANSIT", "DELIVERED"
+  labelUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  trackingEvents TrackingEvent[]
+
+  @@index([purchaseOrderId])
+  @@map("shipments")
+}
+
+/// Tracking Event - a status update for a shipment's journey
+model TrackingEvent {
+  id          String   @id @default(uuid())
+  status      String
+  location    String?
+  description String?
+  timestamp   DateTime @default(now())
+
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@map("tracking_events")
+}
