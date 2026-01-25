@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model PurchaseOrder {
+  id          String     @id @default(cuid())
+  orderNumber String     @unique
+  status      String     @default("pending")
+  metadata    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  shipments   Shipment[]
+
+  @@map("purchase_orders")
+}
+
+model Shipment {
+  id              String          @id @default(cuid())
+  trackingNumber  String          @unique
+  carrier         String
+  status          String          @default("pending")
+  purchaseOrderId String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  purchaseOrder   PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  trackingEvents  TrackingEvent[]
+
+  @@map("shipments")
+}
+
+model TrackingEvent {
+  id          String   @id @default(cuid())
+  status      String
+  description String?
+  timestamp   DateTime
+  shipmentId  String
+  createdAt   DateTime @default(now())
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@map("tracking_events")
+}
+
+model InternalConfig {
+  key       String    @id
+  value     String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("internal_configs")
+}
+
+model SystemToken {
+  id        String   @id @default(uuid())
+  provider  String   @unique // e.g., "UPS", "USPS"
+  token     String
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@map("system_tokens")
+}

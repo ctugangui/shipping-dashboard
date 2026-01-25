@@ -1,0 +1,106 @@
+Project Log: Shipping Dashboard
+Tuesday, January 13, 2026
+Core Window: 10:00 - 13:00
+
+1. Project Initialization & Infrastructure
+    * Technical Setup: Scaffolding completed using Node.js v22 (LTS) with ES Modules.
+
+* Architecture Pattern: Established a Service-Controller-Route (SCR) pattern to decouple business logic for carriers (UPS/USPS) from API routes.
+
+* Environment Control: .env and .gitignore configured to professional security standards to prevent credential leakage.
+
+* GitHub Integration: Repository initialized and linked; successfully resolved a git rebase conflict to synchronize local and remote histories.
+
+2. Database & Data Integrity
+* Provider Choice: Initialized SQLite via Prisma ORM for a lightweight local footprint on the Mac mini.
+
+* Schema Design: Defined core relational models:
+
+    * PurchaseOrder: Business logic and order tracking.
+
+    * Shipment: Logistics mapping.
+
+    * TrackingDetail: Historical state management.
+
+* Migration Milestone: Successfully executed the first Prisma migration (init).
+
+3. AI Orchestration
+* Workflow Audit: Leveraged a dual-model AI workflow using Gemini (Architect) for design and Claude (Builder) for implementation.
+
+* Documentation: Established this Markdown log to demonstrate senior-level competence in AI-assisted development and project management.
+
+Next Session Goal: Implement the UPSService.js module to handle OAuth 2.0 authentication and fetch real-time tracking data from the UPS API.
+
+
+
+
+## [2026-01-24] Phase: Architecture Reset (The "Scorched Earth" Protocol)
+
+### 1. The Challenge
+We initially started with JavaScript for speed, but as the data model grew (relationships between POs and Shipments), the lack of type safety became a liability.
+
+### 2. The Decision (Architect Role)
+Decided to pivot to **TypeScript** and **Node.js v22**. Rather than migrating files incrementally, we chose a "Scorched Earth" approach—nuking the legacy JS code to rebuild a clean TypeScript/Fastify scaffold.
+
+### 3. The AI Workflow
+* **Architect (Gemini):** Defined the new `tsconfig` standards (ES2022, NodeNext) and the Service-Controller pattern.
+* **Builder (Claude):** Generated the boilerplate code for the new scaffold based on the Architect's specs.
+* **Human Review:** Verified the server boot sequence and enforced strict environment variable validation.
+
+### 4. Key Takeaway
+Paying down technical debt early (switching to TS) prevents "ghost bugs" later in the project.
+
+
+
+
+
+
+
+
+
+## [2026-01-24] Phase: Foundation & Authentication Strategy
+
+### 1. The Challenge
+With the project reset to a clean TypeScript/Fastify state ("Scorched Earth"), the immediate hurdle was integrating the UPS API.
+*   **Problem:** The UPS OAuth 2.0 flow requires a fresh token for requests.
+*   **Risk:** During development (hot-reloading), the server restarts frequently. If we fetch a new token on every boot, we risk hitting UPS API rate limits or getting the IP banned.
+
+### 2. The Decision (Architect Role)
+We rejected an in-memory token strategy. Instead, we architected a persistence layer using **Prisma + SQLite**.
+*   **Schema:** Introduced a `SystemToken` model to store the encrypted Access Token and its `expiresAt` timestamp.
+*   **Logic:** The Service layer (`UpsAuthService`) acts as a singleton. It checks the DB first; if a valid token exists, it reuses it. It only fetches a new token if the current one is expired or missing.
+*   **Constraint:** Strictly using native Node.js `fetch` (no Axios) to reduce bundle size and dependencies.
+
+### 3. The AI Workflow
+*   **Architect:** Defined the "Check-DB-First" logic flow and the Prisma schema for `SystemToken`.
+*   **Builder (Claude):** Tasked with implementing the Service class with strict TypeScript interfaces for the UPS OAuth response.
+*   **Human:** Managed the migration (`npx prisma migrate`) and verified the token persistence logic.
+
+### 4. Outcome
+A robust authentication foundation that survives server restarts and respects 3rd-party API limits.
+
+## [2026-01-24] Phase: The "First Handshake" (UPS Integration)
+
+### 1. The Goal
+Establish a secure, persistent connection with the UPS API.
+*   **Target:** A working endpoint `/api/ups/status` that returns a valid 200 OK signal from UPS.
+*   **Constraint:** Must use the `SystemToken` architecture (SQLite persistence) to avoid re-authenticating on every server restart.
+
+### 2. The Workflow
+*   **Architect (Gemini):** Designed the `UpsAuthService` logic (Singleton pattern, native `fetch` only).
+*   **Builder (Claude):** Generated the Service, Controller, and Route layers.
+
+### 3. Friction Points (Human-in-the-Loop)
+*   **AI Hallucination:** Claude claimed to have created `UpsController.ts` in one iteration, but the file was missing from the file system. I had to intervene and force the file creation.
+*   **Migration State:** Ran into Prisma migration conflicts when adding the `SystemToken` model. Resolved by clearing the dev SQLite file and re-running the migration to ensure a clean schema state.
+*   **Environment Validation:** The initial smoke test failed because we were using placeholder keys. I had to provision real UPS CIE (Sandbox) keys to pass the logic gates.
+
+### 4. The Outcome
+**Success.** The "Acid Test" passed.
+We successfully hit `GET /api/ups/status`, which triggered the internal Service to:
+1.  Check the DB (Token missing).
+2.  Authenticate with UPS (OAuth 2.0).
+3.  Save the new token to SQLite.
+4.  Return "Token is valid".
+
+**Next Steps:** Implement the actual Tracking logic now that the auth pipe is clear.
