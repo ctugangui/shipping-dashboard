@@ -92,7 +92,7 @@ class UpsTrackingService {
       // Normalize the response using the mapper
       const normalizedData = normalizeUpsResponse(rawData, includeRaw);
 
-      return normalizedData;https://vclock.com/#time=11:30&title=Alarm&sound=bells&loop=1
+      return normalizedData;
     } catch (error) {
       if (error instanceof UpsTrackingError) {
         throw error;

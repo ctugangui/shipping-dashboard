@@ -1,0 +1,169 @@
+{
+  "trackResponse": {
+    "shipment": [
+      {
+        "inquiryNumber": "1Z999AA10123456784",
+        "package": [
+          {
+            "trackingNumber": "1Z999AA10123456784",
+            "deliveryDate": [
+              {
+                "type": "SDD",
+                "date": "20250120"
+              }
+            ],
+            "deliveryTime": {
+              "startTime": "090000",
+              "endTime": "190000",
+              "type": "EOD"
+            },
+            "currentStatus": {
+              "type": "D",
+              "description": "DELIVERED",
+              "code": "KB",
+              "statusCode": "011"
+            },
+            "activity": [
+              {
+                "location": {
+                  "address": {
+                    "city": "New York",
+                    "stateProvince": "NY",
+                    "postalCode": "10001",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "D",
+                  "description": "DELIVERED",
+                  "code": "KB"
+                },
+                "date": "20250120",
+                "time": "143052"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "New York",
+                    "stateProvince": "NY",
+                    "postalCode": "10001",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Out For Delivery Today",
+                  "code": "OT"
+                },
+                "date": "20250120",
+                "time": "063000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "New York",
+                    "stateProvince": "NY",
+                    "postalCode": "10001",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Arrived at Facility",
+                  "code": "AR"
+                },
+                "date": "20250120",
+                "time": "041500"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Newark",
+                    "stateProvince": "NJ",
+                    "postalCode": "07102",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Departed Facility",
+                  "code": "DP"
+                },
+                "date": "20250119",
+                "time": "223000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Newark",
+                    "stateProvince": "NJ",
+                    "postalCode": "07102",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Arrived at Facility",
+                  "code": "AR"
+                },
+                "date": "20250119",
+                "time": "180000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Philadelphia",
+                    "stateProvince": "PA",
+                    "postalCode": "19104",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Departed Facility",
+                  "code": "DP"
+                },
+                "date": "20250119",
+                "time": "100000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Philadelphia",
+                    "stateProvince": "PA",
+                    "postalCode": "19104",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Origin Scan",
+                  "code": "OR"
+                },
+                "date": "20250118",
+                "time": "160000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Philadelphia",
+                    "stateProvince": "PA",
+                    "postalCode": "19104",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "M",
+                  "description": "Shipper created a label, UPS has not received the package yet.",
+                  "code": "MP"
+                },
+                "date": "20250118",
+                "time": "143000"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

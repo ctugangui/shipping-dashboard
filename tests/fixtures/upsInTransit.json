@@ -1,0 +1,61 @@
+{
+  "trackResponse": {
+    "shipment": [
+      {
+        "inquiryNumber": "1Z999BB20234567890",
+        "package": [
+          {
+            "trackingNumber": "1Z999BB20234567890",
+            "deliveryDate": [
+              {
+                "type": "SDD",
+                "date": "20250125"
+              }
+            ],
+            "currentStatus": {
+              "type": "I",
+              "description": "In Transit",
+              "code": "IT"
+            },
+            "activity": [
+              {
+                "location": {
+                  "address": {
+                    "city": "Chicago",
+                    "stateProvince": "IL",
+                    "postalCode": "60601",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "In Transit",
+                  "code": "IT"
+                },
+                "date": "20250122",
+                "time": "150000"
+              },
+              {
+                "location": {
+                  "address": {
+                    "city": "Denver",
+                    "stateProvince": "CO",
+                    "postalCode": "80202",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "I",
+                  "description": "Departed Facility",
+                  "code": "DP"
+                },
+                "date": "20250121",
+                "time": "080000"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

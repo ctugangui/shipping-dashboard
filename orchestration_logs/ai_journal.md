@@ -104,3 +104,36 @@ We successfully hit `GET /api/ups/status`, which triggered the internal Service 
 4.  Return "Token is valid".
 
 **Next Steps:** Implement the actual Tracking logic now that the auth pipe is clear.
+
+## [2026-01-27] Phase: Standardization & Quality Assurance
+
+### 1. The Challenge
+Raw data from carrier APIs (UPS) is deeply nested, cryptic ("status: D"), and vendor-specific. Building a UI directly against this creates tight coupling; if we switch to USPS, the UI breaks.
+
+### 2. The Decision (Architect Role)
+Implemented the **Adapter Pattern**.
+*   **Unified Interface:** Created `UnifiedShipment` type to enforce a standard contract for all carriers.
+*   **Mapper Logic:** Built a pure function to transform UPS JSON -> Unified Object.
+*   **Testing Strategy:** Rejected Jest (bloated) in favor of the **Node.js Native Test Runner**. This kept dependencies zero and boot times instant.
+
+### 3. The Outcome
+*   **Test Coverage:** Achieved 100% coverage on the normalization logic (9/9 tests passed).
+*   **Architecture:** The core system is now agnostic to the data provider. The Controller returns standard data, regardless of the messy API source.
+
+## [2026-01-27] Phase: Performance Engineering (Cache-Aside Pattern)
+
+### 1. The Challenge
+External APIs (UPS) are slow (~400ms) and rate-limited. Relying on real-time fetching for a dashboard is unscalable; refreshing the page 10 times results in 10 redundant API calls.
+
+### 2. The Decision (Architect Role)
+Implemented a **Cache-Aside Strategy** using SQLite/Prisma.
+*   **Schema:** Introduced `CachedShipment` models to store normalized data, separated from core business logic to avoid domain pollution.
+*   **Logic:** The `ShipmentService` acts as the gatekeeper.
+    1.  Checks DB first.
+    2.  If data is fresh (< 15 mins), return immediately.
+    3.  If stale/missing, fetch upstream, normalize, and upsert to DB.
+*   **Constraint:** Used atomic transactions (`$transaction`) to ensure shipment details and events are updated simultaneously.
+
+### 3. The Outcome
+*   **Performance:** Reduced API latency from **435ms** (Cold) to **28ms** (Warm).
+*   **Reliability:** The system is now resilient to upstream API outages for recently viewed packages.

@@ -55,7 +55,9 @@ export const ModelName = {
   Shipment: 'Shipment',
   TrackingEvent: 'TrackingEvent',
   InternalConfig: 'InternalConfig',
-  SystemToken: 'SystemToken'
+  SystemToken: 'SystemToken',
+  CachedShipment: 'CachedShipment',
+  CachedShipmentEvent: 'CachedShipmentEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -128,6 +130,32 @@ export const SystemTokenScalarFieldEnum = {
 } as const
 
 export type SystemTokenScalarFieldEnum = (typeof SystemTokenScalarFieldEnum)[keyof typeof SystemTokenScalarFieldEnum]
+
+
+export const CachedShipmentScalarFieldEnum = {
+  id: 'id',
+  trackingNumber: 'trackingNumber',
+  carrier: 'carrier',
+  status: 'status',
+  estimatedDelivery: 'estimatedDelivery',
+  currentLocation: 'currentLocation',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CachedShipmentScalarFieldEnum = (typeof CachedShipmentScalarFieldEnum)[keyof typeof CachedShipmentScalarFieldEnum]
+
+
+export const CachedShipmentEventScalarFieldEnum = {
+  id: 'id',
+  shipmentId: 'shipmentId',
+  timestamp: 'timestamp',
+  location: 'location',
+  description: 'description',
+  status: 'status'
+} as const
+
+export type CachedShipmentEventScalarFieldEnum = (typeof CachedShipmentEventScalarFieldEnum)[keyof typeof CachedShipmentEventScalarFieldEnum]
 
 
 export const SortOrder = {

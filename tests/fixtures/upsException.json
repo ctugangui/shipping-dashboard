@@ -1,0 +1,38 @@
+{
+  "trackResponse": {
+    "shipment": [
+      {
+        "inquiryNumber": "1Z999CC30345678901",
+        "package": [
+          {
+            "trackingNumber": "1Z999CC30345678901",
+            "currentStatus": {
+              "type": "X",
+              "description": "Exception",
+              "code": "EX"
+            },
+            "activity": [
+              {
+                "location": {
+                  "address": {
+                    "city": "Miami",
+                    "stateProvince": "FL",
+                    "postalCode": "33101",
+                    "countryCode": "US"
+                  }
+                },
+                "status": {
+                  "type": "X",
+                  "description": "The package was damaged in transit. UPS will notify the sender.",
+                  "code": "DM"
+                },
+                "date": "20250121",
+                "time": "110000"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

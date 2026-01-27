@@ -64,3 +64,30 @@ model SystemToken {
 
   @@map("system_tokens")
 }
+
+// Cache layer for tracking data from external APIs
+model CachedShipment {
+  id                String                @id @default(uuid())
+  trackingNumber    String                @unique
+  carrier           String                // e.g., "UPS", "FEDEX", "USPS"
+  status            String                // e.g., "TRANSIT", "DELIVERED", "EXCEPTION"
+  estimatedDelivery DateTime?
+  currentLocation   String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt // Acts as cache timestamp
+  events            CachedShipmentEvent[]
+
+  @@map("cached_shipments")
+}
+
+model CachedShipmentEvent {
+  id          String          @id @default(uuid())
+  shipmentId  String
+  shipment    CachedShipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  timestamp   DateTime
+  location    String?
+  description String
+  status      String          // The normalized status code
+
+  @@map("cached_shipment_events")
+}

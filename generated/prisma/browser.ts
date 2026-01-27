@@ -42,3 +42,13 @@ export type InternalConfig = Prisma.InternalConfigModel
  * 
  */
 export type SystemToken = Prisma.SystemTokenModel
+/**
+ * Model CachedShipment
+ * 
+ */
+export type CachedShipment = Prisma.CachedShipmentModel
+/**
+ * Model CachedShipmentEvent
+ * 
+ */
+export type CachedShipmentEvent = Prisma.CachedShipmentEventModel

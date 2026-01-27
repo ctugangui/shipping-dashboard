@@ -388,7 +388,9 @@ export const ModelName = {
   Shipment: 'Shipment',
   TrackingEvent: 'TrackingEvent',
   InternalConfig: 'InternalConfig',
-  SystemToken: 'SystemToken'
+  SystemToken: 'SystemToken',
+  CachedShipment: 'CachedShipment',
+  CachedShipmentEvent: 'CachedShipmentEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "purchaseOrder" | "shipment" | "trackingEvent" | "internalConfig" | "systemToken"
+    modelProps: "purchaseOrder" | "shipment" | "trackingEvent" | "internalConfig" | "systemToken" | "cachedShipment" | "cachedShipmentEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -778,6 +780,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CachedShipment: {
+      payload: Prisma.$CachedShipmentPayload<ExtArgs>
+      fields: Prisma.CachedShipmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CachedShipmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CachedShipmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        findFirst: {
+          args: Prisma.CachedShipmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CachedShipmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        findMany: {
+          args: Prisma.CachedShipmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>[]
+        }
+        create: {
+          args: Prisma.CachedShipmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        createMany: {
+          args: Prisma.CachedShipmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CachedShipmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>[]
+        }
+        delete: {
+          args: Prisma.CachedShipmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        update: {
+          args: Prisma.CachedShipmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.CachedShipmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CachedShipmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CachedShipmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.CachedShipmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentPayload>
+        }
+        aggregate: {
+          args: Prisma.CachedShipmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCachedShipment>
+        }
+        groupBy: {
+          args: Prisma.CachedShipmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CachedShipmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CachedShipmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CachedShipmentCountAggregateOutputType> | number
+        }
+      }
+    }
+    CachedShipmentEvent: {
+      payload: Prisma.$CachedShipmentEventPayload<ExtArgs>
+      fields: Prisma.CachedShipmentEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CachedShipmentEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CachedShipmentEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        findFirst: {
+          args: Prisma.CachedShipmentEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CachedShipmentEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        findMany: {
+          args: Prisma.CachedShipmentEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>[]
+        }
+        create: {
+          args: Prisma.CachedShipmentEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        createMany: {
+          args: Prisma.CachedShipmentEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CachedShipmentEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>[]
+        }
+        delete: {
+          args: Prisma.CachedShipmentEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        update: {
+          args: Prisma.CachedShipmentEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.CachedShipmentEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CachedShipmentEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CachedShipmentEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.CachedShipmentEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CachedShipmentEventPayload>
+        }
+        aggregate: {
+          args: Prisma.CachedShipmentEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCachedShipmentEvent>
+        }
+        groupBy: {
+          args: Prisma.CachedShipmentEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CachedShipmentEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CachedShipmentEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CachedShipmentEventCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -871,6 +1021,32 @@ export const SystemTokenScalarFieldEnum = {
 } as const
 
 export type SystemTokenScalarFieldEnum = (typeof SystemTokenScalarFieldEnum)[keyof typeof SystemTokenScalarFieldEnum]
+
+
+export const CachedShipmentScalarFieldEnum = {
+  id: 'id',
+  trackingNumber: 'trackingNumber',
+  carrier: 'carrier',
+  status: 'status',
+  estimatedDelivery: 'estimatedDelivery',
+  currentLocation: 'currentLocation',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CachedShipmentScalarFieldEnum = (typeof CachedShipmentScalarFieldEnum)[keyof typeof CachedShipmentScalarFieldEnum]
+
+
+export const CachedShipmentEventScalarFieldEnum = {
+  id: 'id',
+  shipmentId: 'shipmentId',
+  timestamp: 'timestamp',
+  location: 'location',
+  description: 'description',
+  status: 'status'
+} as const
+
+export type CachedShipmentEventScalarFieldEnum = (typeof CachedShipmentEventScalarFieldEnum)[keyof typeof CachedShipmentEventScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1015,6 +1191,8 @@ export type GlobalOmitConfig = {
   trackingEvent?: Prisma.TrackingEventOmit
   internalConfig?: Prisma.InternalConfigOmit
   systemToken?: Prisma.SystemTokenOmit
+  cachedShipment?: Prisma.CachedShipmentOmit
+  cachedShipmentEvent?: Prisma.CachedShipmentEventOmit
 }
 
 /* Types for Logging */
