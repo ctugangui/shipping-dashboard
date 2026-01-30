@@ -1,33 +1,41 @@
 import { prisma } from '../lib/prisma.js';
 import { upsTrackingService } from './UpsTrackingService.js';
+import { uspsTrackingService } from './UspsTrackingService.js';
+import { localCourierService } from './LocalCourierService.js';
 import type { UnifiedShipment, ShipmentEvent } from '../types/UnifiedShipment.js';
 
 // Cache configuration
 const CACHE_TTL_MINUTES = 15;
 
-// Carrier detection regex patterns
-const CARRIER_PATTERNS = {
-  UPS: /^1Z[A-Z0-9]{16}$/i,
-  FEDEX: /^[0-9]{12,22}$/,
-  USPS: /^(94|93|92|94|95)[0-9]{20,22}$/,
-} as const;
+// Carrier types for routing
+type CarrierRoute = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL';
 
-type SupportedCarrier = keyof typeof CARRIER_PATTERNS;
+// Carrier detection patterns with priority order
+const CARRIER_ROUTING: Array<{ pattern: RegExp; carrier: CarrierRoute }> = [
+  // LOCAL: Starts with 'LOC' (for testing)
+  { pattern: /^LOC/i, carrier: 'LOCAL' },
+  // UPS: Starts with '1Z' followed by 16 alphanumeric characters
+  { pattern: /^1Z[A-Z0-9]{16}$/i, carrier: 'UPS' },
+  // USPS: Starts with 94, 93, 92, or 95 followed by 20-22 digits
+  { pattern: /^(94|93|92|95)\d{20,22}$/, carrier: 'USPS' },
+  // FEDEX: 12-22 digit numbers (check after USPS to avoid conflicts)
+  { pattern: /^\d{12,22}$/, carrier: 'FEDEX' },
+];
 
 /**
  * Detect carrier from tracking number format
+ * Uses pattern matching with priority order
  */
-function detectCarrier(trackingNumber: string): SupportedCarrier | null {
+function detectCarrier(trackingNumber: string): CarrierRoute | null {
   const cleaned = trackingNumber.replace(/\s/g, '').toUpperCase();
 
-  for (const [carrier, pattern] of Object.entries(CARRIER_PATTERNS)) {
+  for (const { pattern, carrier } of CARRIER_ROUTING) {
     if (pattern.test(cleaned)) {
-      return carrier as SupportedCarrier;
+      return carrier;
     }
   }
 
-  // Default to UPS for now if pattern doesn't match
-  return 'UPS';
+  return null;
 }
 
 /**
@@ -83,12 +91,54 @@ function mapDbToUnifiedShipment(
   };
 }
 
+/**
+ * Fetch tracking data from the appropriate carrier service
+ */
+async function fetchFromCarrier(
+  trackingNumber: string,
+  carrier: CarrierRoute
+): Promise<UnifiedShipment> {
+  switch (carrier) {
+    case 'UPS':
+      console.log(`[ShipmentService] Routing to UPS for ${trackingNumber}`);
+      return upsTrackingService.trackShipment(trackingNumber);
+
+    case 'USPS':
+      console.log(`[ShipmentService] Routing to USPS for ${trackingNumber}`);
+      return uspsTrackingService.trackShipment(trackingNumber);
+
+    case 'LOCAL':
+      console.log(`[ShipmentService] Routing to LOCAL COURIER for ${trackingNumber}`);
+      return localCourierService.trackShipment(trackingNumber);
+
+    case 'FEDEX':
+      // TODO: Implement FedEx when ready
+      throw new Error('FedEx carrier is not yet implemented');
+
+    default:
+      throw new Error(`Unknown carrier: ${carrier}`);
+  }
+}
+
 class ShipmentService {
   /**
    * Get shipment data with Cache-Aside pattern
+   * 1. Check cache (database)
+   * 2. If valid cache exists, return it
+   * 3. If not, fetch from appropriate carrier API and update cache
    */
   async getShipment(trackingNumber: string): Promise<UnifiedShipment> {
+    // Normalize tracking number
     const normalizedTrackingNumber = trackingNumber.replace(/\s/g, '').toUpperCase();
+
+    // Detect carrier first for better error messages
+    const carrier = detectCarrier(normalizedTrackingNumber);
+    if (!carrier) {
+      throw new Error(
+        `Unable to determine carrier for tracking number: ${normalizedTrackingNumber}. ` +
+        `Supported formats: UPS (1Z...), USPS (94/93/92/95...), LOCAL (LOC...)`
+      );
+    }
 
     // Attempt 1: Check database cache
     const cachedShipment = await prisma.cachedShipment.findUnique({
@@ -102,28 +152,16 @@ class ShipmentService {
 
     // Validate cache
     if (cachedShipment && isCacheValid(cachedShipment.updatedAt, cachedShipment.status)) {
-      console.log(`[ShipmentService] Cache HIT for ${normalizedTrackingNumber}`);
+      console.log(`[ShipmentService] Cache HIT for ${normalizedTrackingNumber} (${carrier})`);
       return mapDbToUnifiedShipment(cachedShipment);
     }
 
-    console.log(`[ShipmentService] Cache MISS for ${normalizedTrackingNumber}`);
+    console.log(`[ShipmentService] Cache MISS for ${normalizedTrackingNumber} (${carrier})`);
 
-    // Attempt 2: Fetch from API
-    const carrier = detectCarrier(normalizedTrackingNumber);
-    let freshData: UnifiedShipment;
+    // Attempt 2: Fetch from carrier API
+    const freshData = await fetchFromCarrier(normalizedTrackingNumber, carrier);
 
-    switch (carrier) {
-      case 'UPS':
-        freshData = await upsTrackingService.trackShipment(normalizedTrackingNumber);
-        break;
-      case 'FEDEX':
-      case 'USPS':
-        throw new Error(`Carrier ${carrier} is not yet supported`);
-      default:
-        throw new Error(`Unable to determine carrier for tracking number: ${normalizedTrackingNumber}`);
-    }
-
-    // Persist to database
+    // Persist to database using transaction
     await this.upsertShipmentCache(normalizedTrackingNumber, freshData);
 
     return freshData;
@@ -136,7 +174,8 @@ class ShipmentService {
     trackingNumber: string,
     data: UnifiedShipment
   ): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: typeof prisma) => {
+      // Upsert the shipment
       const shipment = await tx.cachedShipment.upsert({
         where: { trackingNumber },
         update: {
@@ -144,6 +183,7 @@ class ShipmentService {
           status: data.status,
           estimatedDelivery: data.estimatedDelivery ? new Date(data.estimatedDelivery) : null,
           currentLocation: data.currentLocation,
+          // updatedAt is automatically updated by Prisma
         },
         create: {
           trackingNumber,
@@ -181,18 +221,19 @@ class ShipmentService {
    */
   async refreshShipment(trackingNumber: string): Promise<UnifiedShipment> {
     const normalizedTrackingNumber = trackingNumber.replace(/\s/g, '').toUpperCase();
+
+    // Detect carrier
     const carrier = detectCarrier(normalizedTrackingNumber);
-
-    let freshData: UnifiedShipment;
-
-    switch (carrier) {
-      case 'UPS':
-        freshData = await upsTrackingService.trackShipment(normalizedTrackingNumber);
-        break;
-      default:
-        throw new Error(`Carrier ${carrier} is not yet supported`);
+    if (!carrier) {
+      throw new Error(
+        `Unable to determine carrier for tracking number: ${normalizedTrackingNumber}`
+      );
     }
 
+    // Fetch from carrier
+    const freshData = await fetchFromCarrier(normalizedTrackingNumber, carrier);
+
+    // Update cache
     await this.upsertShipmentCache(normalizedTrackingNumber, freshData);
 
     return freshData;
@@ -206,7 +247,9 @@ class ShipmentService {
 
     await prisma.cachedShipment.delete({
       where: { trackingNumber: normalizedTrackingNumber },
-    }).catch(() => {});
+    }).catch(() => {
+      // Ignore if not found
+    });
 
     console.log(`[ShipmentService] Cache INVALIDATED for ${normalizedTrackingNumber}`);
   }
@@ -233,11 +276,24 @@ class ShipmentService {
 
     return {
       totalCached,
-      byStatus: Object.fromEntries(byStatus.map((s) => [s.status, s._count.status])),
-      byCarrier: Object.fromEntries(byCarrier.map((c) => [c.carrier, c._count.carrier])),
+      byStatus: Object.fromEntries(
+        byStatus.map((s: { status: string; _count: { status: number } }) => [s.status, s._count.status])
+      ),
+      byCarrier: Object.fromEntries(
+        byCarrier.map((c: { carrier: string; _count: { carrier: number } }) => [c.carrier, c._count.carrier])
+      ),
     };
+  }
+
+  /**
+   * Detect carrier for a tracking number (exposed for debugging)
+   */
+  detectCarrier(trackingNumber: string): CarrierRoute | null {
+    return detectCarrier(trackingNumber.replace(/\s/g, '').toUpperCase());
   }
 }
 
+// Export singleton instance
 export const shipmentService = new ShipmentService();
+
 export default shipmentService;

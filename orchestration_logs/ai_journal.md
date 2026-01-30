@@ -137,3 +137,21 @@ Implemented a **Cache-Aside Strategy** using SQLite/Prisma.
 ### 3. The Outcome
 *   **Performance:** Reduced API latency from **435ms** (Cold) to **28ms** (Warm).
 *   **Reliability:** The system is now resilient to upstream API outages for recently viewed packages.
+
+## [2026-01-29] Phase: Polymorphism & The Mock Pivot
+
+### 1. The Challenge
+We attempted to integrate **USPS Tracking**. However, the USPS v3 API credentials provided "Public Access" but lacked the specific `tracking` scope required to fetch data, returning `401 Unauthorized`. Waiting for USPS support would stall the project.
+
+### 2. The Decision (Architect Role)
+Executed **Protocol: Mock Carrier**.
+*   **Strategy:** Instead of waiting for keys, we implemented a `LocalCourierService` that mimics the USPS/Carrier interface.
+*   **Routing Logic:** Updated `ShipmentService` to inspect the tracking number prefix:
+    *   `1Z...` -> Routes to `UpsTrackingService`
+    *   `LOC...` -> Routes to `LocalCourierService`
+*   **Simulation:** The Mock service simulates network latency (800ms) and deterministic states (DELIVERED, EXCEPTION) based on the tracking number suffix.
+
+### 3. The Outcome
+*   **Architecture Verified:** The system proved it can handle multiple carriers seamlessly.
+*   **Caching Validated:** `LocalCourier` requests are cached identically to UPS requests (27ms warm response vs 800ms cold).
+*   **Unblocked:** Frontend development can proceed using `LOC` numbers to test various UI states without needing real packages.

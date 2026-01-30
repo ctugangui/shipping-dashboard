@@ -13,6 +13,11 @@ export const config = {
     accountNumber: process.env.UPS_ACCOUNT_NUMBER || '',
     baseUrl: process.env.UPS_BASE_URL || 'https://onlinetools.ups.com',
   },
+  usps: {
+    clientId: process.env.USPS_CLIENT_ID || '',
+    clientSecret: process.env.USPS_CLIENT_SECRET || '',
+    baseUrl: process.env.USPS_BASE_URL || 'https://api.usps.com',
+  },
 } as const;
 
 export type Config = typeof config;
