@@ -1,0 +1,40 @@
+<article>
+  <header>
+    <h3>📦 <%= shipment.trackingNumber %></h3>
+    <p>
+      <span class="status-badge status-<%= shipment.status.toLowerCase().replace(' ', '_') %>">
+        <%= shipment.status %>
+      </span>
+      <small style="margin-left: 1rem;">via <%= shipment.carrier %></small>
+    </p>
+  </header>
+  
+  <div>
+    <% if (shipment.currentLocation) { %>
+      <p><strong>Current Location:</strong> <%= shipment.currentLocation %></p>
+    <% } %>
+    
+    <% if (shipment.estimatedDelivery) { %>
+      <p><strong>Estimated Delivery:</strong> <%= new Date(shipment.estimatedDelivery).toLocaleString() %></p>
+    <% } %>
+  </div>
+  
+  <% if (shipment.events && shipment.events.length > 0) { %>
+    <details open>
+      <summary><strong>Tracking History</strong> (<%= shipment.events.length %> events)</summary>
+      <div style="margin-top: 1rem;">
+        <% shipment.events.forEach(function(event) { %>
+          <div class="event-item">
+            <div class="event-timestamp">
+              <%= new Date(event.timestamp).toLocaleString() %>
+            </div>
+            <div><%= event.description %></div>
+            <% if (event.location) { %>
+              <div class="event-location">📍 <%= event.location %></div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    </details>
+  <% } %>
+</article>

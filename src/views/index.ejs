@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Shipping Dashboard' %></title>
+  
+  <!-- Pico.css for styling -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  
+  <!-- HTMX for interactivity -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  
+  <style>
+    .htmx-indicator {
+      display: none;
+      color: #007bff;
+      font-style: italic;
+    }
+    .htmx-request .htmx-indicator {
+      display: inline-block;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+    }
+    .status-delivered {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status-in_transit {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    .status-exception {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .event-item {
+      padding: 0.75rem;
+      border-left: 3px solid #007bff;
+      margin-bottom: 0.5rem;
+      background-color: #f8f9fa;
+    }
+    .event-timestamp {
+      font-weight: bold;
+      color: #495057;
+    }
+    .event-location {
+      color: #6c757d;
+      font-size: 0.875rem;
+    }
+    .info-box {
+      background-color: #e7f3ff;
+      border-left: 4px solid #007bff;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <article>
+      <header>
+        <h1>📦 Shipping Dashboard</h1>
+        <p>Track packages from UPS, USPS, and Local Couriers</p>
+      </header>
+      
+      <div class="info-box">
+        <strong>Supported Formats:</strong>
+        <ul style="margin-bottom: 0;">
+          <li><strong>UPS:</strong> 1Z + 16 alphanumeric characters (e.g., 1Z999AA10123456784)</li>
+          <li><strong>USPS:</strong> 94/93/92/95 + 20-22 digits (e.g., 9400111899223456789012)</li>
+          <li><strong>Local Courier:</strong> LOC + any characters (e.g., LOC123456789, LOC123456DEL)</li>
+        </ul>
+      </div>
+      
+      <form hx-post="/partials/track" 
+            hx-target="#result-area" 
+            hx-swap="innerHTML" 
+            hx-indicator="#loading">
+        <label for="trackingNumber">
+          Enter Tracking Number
+          <input type="text" 
+                 id="trackingNumber"
+                 name="trackingNumber" 
+                 placeholder="Enter 1Z..., 94..., or LOC..." 
+                 required 
+                 autocomplete="off">
+        </label>
+        <button type="submit">Track Package</button>
+      </form>
+      
+      <div id="loading" class="htmx-indicator">
+        🔍 Searching carrier networks...
+      </div>
+      
+      <div id="result-area">
+        <!-- Results will appear here -->
+      </div>
+    </article>
+  </main>
+</body>
+</html>

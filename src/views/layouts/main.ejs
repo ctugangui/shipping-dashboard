@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Shipping Dashboard' %></title>
+  
+  <!-- Pico.css for styling -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  
+  <!-- HTMX for interactivity -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  
+  <style>
+    .htmx-indicator {
+      display: none;
+    }
+    .htmx-request .htmx-indicator {
+      display: inline-block;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+    }
+    .status-delivered {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status-in_transit {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    .status-exception {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .event-item {
+      padding: 0.75rem;
+      border-left: 3px solid #007bff;
+      margin-bottom: 0.5rem;
+      background-color: #f8f9fa;
+    }
+    .event-timestamp {
+      font-weight: bold;
+      color: #495057;
+    }
+    .event-location {
+      color: #6c757d;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <%- body %>
+  </main>
+</body>
+</html>

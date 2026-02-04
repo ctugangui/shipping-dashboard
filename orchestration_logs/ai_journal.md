@@ -155,3 +155,30 @@ Executed **Protocol: Mock Carrier**.
 *   **Architecture Verified:** The system proved it can handle multiple carriers seamlessly.
 *   **Caching Validated:** `LocalCourier` requests are cached identically to UPS requests (27ms warm response vs 800ms cold).
 *   **Unblocked:** Frontend development can proceed using `LOC` numbers to test various UI states without needing real packages.
+
+
+## [2026-02-03] Phase: The Migration & The Glass Layer
+
+**Phase:** Frontend Spike ("Option A")
+**Tools:** Gemini (Architect) + Cline (Builder)
+
+### 1. The Challenge
+We needed to visually verify our normalized data (the "Glass Layer") but lacked a UI. Simultaneously, we migrated our workflow from the Claude Web UI to **Cline** (VS Code) to gain direct file system control, which introduced new workflow constraints regarding token costs and context management.
+
+### 2. The Decision (Architect Role)
+* **Architecture:** Implemented **Server-Side Rendering (SSR)** using `EJS` and `HTMX`. This avoided React complexity while enabling "Click-to-Load" interactivity without full page reloads.
+* **Workflow:** Adopted the **"Sniper Method"** with Cline (one specific task per chat session) to keep context windows small and costs low (~$3.00 for the full build).
+
+### 3. Execution & Technical Hurdles
+We encountered and resolved three distinct categories of blockers during the implementation:
+* **Protocol Error (415):** Fastify rejected HTMX form submissions (`application/x-www-form-urlencoded`).
+    * *Fix:* Architected and installed the `@fastify/form` plugin to handle standard HTML payloads.
+* **Environment Locks:** The server port (3000) became locked by "Zombie" background processes during the migration.
+    * *Fix:* Utilized `lsof -ti :3000 | xargs kill -9` to force-clear the port.
+* **Data Integrity (Cache Poisoning):** Initial testing returned stale UPS Sandbox data (e.g., "Shenzhen 2024") because `dev.db` persisted across sessions.
+    * *Fix:* Created a `db:clear` utility script to flush the cache and updated `.env` to point to `onlinetools.ups.com` (Production).
+
+### 4. The Outcome
+* **Vertical Slice Complete:** The system successfully tracks **Live UPS Production** packages in real-time.
+* **Performance Verified:** Confirmed ~530ms for real API round-trips vs ~11ms for Cache Hits directly in the new Dashboard.
+* **State:** The project is fully migrated to the local agent workflow, stable, and ready for Background Jobs.
