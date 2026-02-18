@@ -182,3 +182,21 @@ We encountered and resolved three distinct categories of blockers during the imp
 * **Vertical Slice Complete:** The system successfully tracks **Live UPS Production** packages in real-time.
 * **Performance Verified:** Confirmed ~530ms for real API round-trips vs ~11ms for Cache Hits directly in the new Dashboard.
 * **State:** The project is fully migrated to the local agent workflow, stable, and ready for Background Jobs.
+
+## [2026-02-17] Phase: The Pulse (Background Jobs)
+
+### 1. The Challenge
+Shipment data in our database becomes stale over time. Relying on users to manually refresh pages to get updates is inefficient and risks hitting API rate limits if everyone refreshes at once. We needed a "heartbeat" to keep data fresh automatically.
+
+### 2. The Decision (Architect Role)
+* **Tool:** `fastify-cron` for scheduling (simple, lightweight, runs in-process).
+* **Strategy:** "Polite Polling"
+    * Interval: Every 10 minutes.
+    * Batch Size: Max 5 shipments per run (to respect UPS rate limits).
+    * Logic: Only target `active` shipments (exclude `DELIVERED`) that haven't been updated in 30+ minutes.
+* **Testing:** Implemented a manual trigger route (`/api/cron/trigger`) to verify logic without waiting for the 10-minute timer.
+
+### 3. The Outcome
+* **Verified:** Manually forced a shipment to `IN_TRANSIT` and `stale` state in SQLite.
+* **Result:** The Cron job successfully detected the stale record, queried the live UPS API, and auto-corrected the status to `DELIVERED`.
+* **State:** The system now autonomously maintains data integrity.
