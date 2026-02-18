@@ -200,3 +200,22 @@ Shipment data in our database becomes stale over time. Relying on users to manua
 * **Verified:** Manually forced a shipment to `IN_TRANSIT` and `stale` state in SQLite.
 * **Result:** The Cron job successfully detected the stale record, queried the live UPS API, and auto-corrected the status to `DELIVERED`.
 * **State:** The system now autonomously maintains data integrity.
+
+## [2026-02-17] Phase: Containerization (Docker)
+
+### 1. The Challenge
+To move from "running on my machine" to "running anywhere," we needed to package the application, dependencies, and runtime environment into a single artifact. We also needed to ensure the SQLite database persisted its data even if the application restarted.
+
+### 2. The Solution
+* **Dockerfile:** Created a multi-stage build using `node:20-alpine`.
+    * *Fix:* Updated `start` script to `dist/src/server.js` to match TypeScript's output structure.
+    * *Fix:* Added manual copy steps for non-TypeScript assets (`views/`, `public/`) and the generated Prisma client.
+* **Docker Compose:** Orchestrated the service.
+    * Port: `3000:3000`.
+    * Volume: `./prisma:/app/prisma` (Crucial for SQLite persistence).
+    * Env: injected `DATABASE_URL` pointing to the internal volume path.
+
+### 3. The Outcome
+* **Verified:** The app builds, starts, and serves the UI via Docker.
+* **Persisted:** Data survives container restarts via the volume mount.
+* **Status:** The "Vertical Slice" is now complete and deployable.

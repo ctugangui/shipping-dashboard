@@ -1,0 +1,27 @@
+services:
+  shipping-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount prisma directory for SQLite database persistence
+      - ./prisma:/app/prisma
+    environment:
+      - DATABASE_URL=file:./prisma/dev.db
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      # UPS API Configuration
+      - UPS_BASE_URL=${UPS_BASE_URL}
+      - UPS_CLIENT_ID=${UPS_CLIENT_ID}
+      - UPS_CLIENT_SECRET=${UPS_CLIENT_SECRET}
+      - UPS_ACCOUNT_NUMBER=${UPS_ACCOUNT_NUMBER}
+      # USPS API Configuration
+      - USPS_CLIENT_ID=${USPS_CLIENT_ID}
+      - USPS_CLIENT_SECRET=${USPS_CLIENT_SECRET}
+      - USPS_BASE_URL=${USPS_BASE_URL}
+    env_file:
+      - .env
+    restart: unless-stopped

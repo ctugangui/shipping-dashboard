@@ -174,7 +174,7 @@ class ShipmentService {
     trackingNumber: string,
     data: UnifiedShipment
   ): Promise<void> {
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx) => {
       // Upsert the shipment
       const shipment = await tx.cachedShipment.upsert({
         where: { trackingNumber },

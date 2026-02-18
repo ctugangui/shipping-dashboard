@@ -7,7 +7,7 @@ import type { UnifiedShipment } from '../types/UnifiedShipment.js';
 // UPS Raw API Response Type
 interface UpsRawResponse {
   trackResponse?: {
-    shipment?: unknown[];
+    shipment?: Record<string, unknown>[];
   };
 }
 
@@ -90,7 +90,8 @@ class UpsTrackingService {
       const rawData = (await response.json()) as UpsRawResponse;
 
       // Normalize the response using the mapper
-      const normalizedData = normalizeUpsResponse(rawData, includeRaw);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const normalizedData = normalizeUpsResponse(rawData as any, includeRaw);
 
       return normalizedData;
     } catch (error) {
