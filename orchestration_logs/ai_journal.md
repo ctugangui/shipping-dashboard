@@ -219,3 +219,19 @@ To move from "running on my machine" to "running anywhere," we needed to package
 * **Verified:** The app builds, starts, and serves the UI via Docker.
 * **Persisted:** Data survives container restarts via the volume mount.
 * **Status:** The "Vertical Slice" is now complete and deployable.
+
+## [2026-02-19] Phase: The Command Center & Authentication
+
+### 1. The Challenge
+Transforming the application from a manual search tool into an automated dashboard that organizes data intelligently and remains secure for public-facing deployment.
+
+### 2. The Solution
+* **Kanban Dashboard:** Refactored the homepage to automatically fetch all cached shipments and sort them into "Processing," "In Transit," and "Delivered" columns based on fuzzy status mapping (e.g., mapping UPS `TRANSIT` to `IN_TRANSIT`).
+* **Search UX:** Converted HTMX partial injections into a standard form flow with a `Redirect('/')` pattern. Added robust client-side Regex validation for UPS, USPS, and Local tracking formats to prevent invalid API calls.
+* **Live Sync Indicator:** Implemented a global "Pulse" indicator in the header that calculates the most recent database update, giving the user confidence that background syncs are active.
+* **Personal Authentication:** Secured the entire application (UI and API) behind a single-password login screen using `@fastify/cookie` and HttpOnly session management.
+
+### 3. The Outcome
+* **Performance:** Dashboard loads are now near-instant due to the SQLite-first architecture.
+* **Security:** Unauthorized users are redirected to a sleek login page; sessions are persisted for 30 days.
+* **Readiness:** The app is 95% ready for Open Source or personal cloud hosting.

@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import fastifyCookie from '@fastify/cookie';
 import fastifyView from '@fastify/view';
 import fastifyStatic from '@fastify/static';
 import fastifyFormBody from '@fastify/formbody';
@@ -12,6 +13,7 @@ import upsRoutes from './routes/upsRoutes.js';
 import uspsRoutes from './routes/uspsRoutes.js';
 import trackingRoutes from './routes/trackingRoutes.js';
 import viewRoutes from './routes/viewRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
 import { runRefreshJob } from './jobs/refresh-shipments.job.js';
 
@@ -32,6 +34,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     credentials: true,
   });
 
+  // Register cookie plugin (must be before routes that use cookies)
+  await app.register(fastifyCookie);
+
   // Register form body parser (for HTML form submissions)
   await app.register(fastifyFormBody);
 
@@ -47,7 +52,10 @@ export async function buildApp(): Promise<FastifyInstance> {
     prefix: '/public/',
   });
 
-  // Register view routes (HTML pages)
+  // Register auth routes (login/logout — public, no auth required)
+  await app.register(authRoutes);
+
+  // Register view routes (HTML pages — protected by auth preHandler inside)
   await app.register(viewRoutes);
 
   // Register API routes
