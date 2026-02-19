@@ -4,109 +4,260 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title || 'Shipping Dashboard' %></title>
-  
-  <!-- Pico.css for styling -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- HTMX for interactivity -->
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  
+
   <style>
-    .htmx-indicator {
-      display: none;
-      color: #007bff;
-      font-style: italic;
-    }
-    .htmx-request .htmx-indicator {
-      display: inline-block;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-    }
-    .status-delivered {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .status-in_transit {
-      background-color: #d1ecf1;
-      color: #0c5460;
-    }
-    .status-exception {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    .event-item {
-      padding: 0.75rem;
-      border-left: 3px solid #007bff;
-      margin-bottom: 0.5rem;
-      background-color: #f8f9fa;
-    }
-    .event-timestamp {
-      font-weight: bold;
-      color: #495057;
-    }
-    .event-location {
-      color: #6c757d;
-      font-size: 0.875rem;
-    }
-    .info-box {
-      background-color: #e7f3ff;
-      border-left: 4px solid #007bff;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator { display: inline-block; }
+    body { background-color: #0f172a; }
   </style>
 </head>
-<body>
-  <main class="container">
-    <article>
-      <header>
-        <h1>📦 Shipping Dashboard</h1>
-        <p>Track packages from UPS, USPS, and Local Couriers</p>
-      </header>
-      
-      <div class="info-box">
-        <strong>Supported Formats:</strong>
-        <ul style="margin-bottom: 0;">
-          <li><strong>UPS:</strong> 1Z + 16 alphanumeric characters (e.g., 1Z999AA10123456784)</li>
-          <li><strong>USPS:</strong> 94/93/92/95 + 20-22 digits (e.g., 9400111899223456789012)</li>
-          <li><strong>Local Courier:</strong> LOC + any characters (e.g., LOC123456789, LOC123456DEL)</li>
-        </ul>
+<body class="min-h-screen text-slate-100">
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-white mb-1">📦 Shipping Dashboard</h1>
+        <p class="text-slate-400">Track packages from UPS, USPS, and Local Couriers</p>
       </div>
-      
-      <form hx-post="/partials/track" 
-            hx-target="#result-area" 
-            hx-swap="innerHTML" 
-            hx-indicator="#loading">
-        <label for="trackingNumber">
-          Enter Tracking Number
-          <input type="text" 
-                 id="trackingNumber"
-                 name="trackingNumber" 
-                 placeholder="Enter 1Z..., 94..., or LOC..." 
-                 required 
-                 autocomplete="off">
-        </label>
-        <button type="submit">Track Package</button>
+
+      <!-- Live Sync Indicator + Logout -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </span>
+          <span class="text-sm text-slate-400">
+            <% if (lastSynced) { %>
+              Last synced: <%= new Date(lastSynced).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %>
+            <% } else { %>
+              System Active
+            <% } %>
+          </span>
+        </div>
+
+        <!-- Logout button -->
+        <form action="/logout" method="POST">
+          <button type="submit"
+                  class="text-sm text-slate-400 hover:text-red-400 border border-slate-600 hover:border-red-500/50 px-3 py-1.5 rounded-lg transition-colors">
+            Logout
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-slate-800 rounded-xl p-6 mb-8 border border-slate-700">
+      <h2 class="text-lg font-semibold text-slate-200 mb-4">Track a New Package</h2>
+
+      <div class="text-sm text-slate-400 mb-4 space-y-1">
+        <p><span class="font-medium text-slate-300">UPS:</span> 1Z + 16 alphanumeric characters (e.g., 1Z999AA10123456784)</p>
+        <p><span class="font-medium text-slate-300">USPS:</span> 94/93/92/95 + 20–22 digits (e.g., 9400111899223456789012)</p>
+        <p><span class="font-medium text-slate-300">Local:</span> LOC + any characters (e.g., LOC123456789)</p>
+      </div>
+
+      <form action="/track" method="POST" class="flex gap-3">
+        <input type="text"
+               id="trackingNumber"
+               name="trackingNumber"
+               placeholder="Enter tracking number..."
+               required
+               pattern="^(1Z[A-Z0-9]{16}|9[2-5][0-9]{20,22}|LOC[A-Z0-9]+)$"
+               title="Enter a valid tracking number: UPS (1Z + 16 alphanumeric), USPS (94/93/92/95 + 20–22 digits), or Local (LOC + alphanumeric)"
+               autocomplete="off"
+               class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors">
+          Track
+        </button>
       </form>
-      
-      <div id="loading" class="htmx-indicator">
-        🔍 Searching carrier networks...
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Column 1: Processing / Shipped -->
+      <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>
+          <h2 class="text-base font-semibold text-slate-200">Processing / Shipped</h2>
+          <span class="ml-auto bg-slate-700 text-slate-300 text-xs font-medium px-2 py-0.5 rounded-full">
+            <%= processing.length %>
+          </span>
+        </div>
+
+        <div class="space-y-3" id="col-processing">
+          <% if (processing.length === 0) { %>
+            <p class="text-slate-500 text-sm text-center py-6">No shipments here</p>
+          <% } %>
+          <% processing.forEach(function(s) { %>
+            <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 relative group" id="card-<%= s.id %>">
+              <!-- Remove button -->
+              <button
+                onclick="removeShipment('<%= s.id %>')"
+                class="absolute top-3 right-3 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                title="Remove">
+                ✕
+              </button>
+
+              <!-- Carrier badge -->
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-yellow-900/50 text-yellow-300 border border-yellow-700/50">
+                  <%= s.carrier %>
+                </span>
+                <span class="text-xs text-slate-500 uppercase tracking-wide"><%= s.status.replace(/_/g, ' ') %></span>
+              </div>
+
+              <!-- Tracking number -->
+              <p class="font-mono font-bold text-white text-sm truncate mb-2" title="<%= s.trackingNumber %>">
+                <%= s.trackingNumber %>
+              </p>
+
+              <!-- Details -->
+              <% if (s.currentLocation) { %>
+                <p class="text-xs text-slate-400">📍 <%= s.currentLocation %></p>
+              <% } %>
+              <% if (s.estimatedDelivery) { %>
+                <p class="text-xs text-slate-400 mt-1">🗓 Est. <%= new Date(s.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+              <% } %>
+              <p class="text-xs text-slate-600 mt-2">Updated <%= new Date(s.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></p>
+            </div>
+          <% }); %>
+        </div>
       </div>
-      
-      <div id="result-area">
-        <!-- Results will appear here -->
+
+      <!-- Column 2: In Transit -->
+      <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-3 h-3 rounded-full bg-blue-400 inline-block"></span>
+          <h2 class="text-base font-semibold text-slate-200">In Transit</h2>
+          <span class="ml-auto bg-slate-700 text-slate-300 text-xs font-medium px-2 py-0.5 rounded-full">
+            <%= inTransit.length %>
+          </span>
+        </div>
+
+        <div class="space-y-3" id="col-inTransit">
+          <% if (inTransit.length === 0) { %>
+            <p class="text-slate-500 text-sm text-center py-6">No shipments here</p>
+          <% } %>
+          <% inTransit.forEach(function(s) { %>
+            <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 relative group" id="card-<%= s.id %>">
+              <!-- Remove button -->
+              <button
+                onclick="removeShipment('<%= s.id %>')"
+                class="absolute top-3 right-3 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                title="Remove">
+                ✕
+              </button>
+
+              <!-- Carrier badge -->
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-900/50 text-blue-300 border border-blue-700/50">
+                  <%= s.carrier %>
+                </span>
+                <span class="text-xs text-slate-500 uppercase tracking-wide"><%= s.status.replace(/_/g, ' ') %></span>
+              </div>
+
+              <!-- Tracking number -->
+              <p class="font-mono font-bold text-white text-sm truncate mb-2" title="<%= s.trackingNumber %>">
+                <%= s.trackingNumber %>
+              </p>
+
+              <!-- Details -->
+              <% if (s.currentLocation) { %>
+                <p class="text-xs text-slate-400">📍 <%= s.currentLocation %></p>
+              <% } %>
+              <% if (s.estimatedDelivery) { %>
+                <p class="text-xs text-slate-400 mt-1">🗓 Est. <%= new Date(s.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+              <% } %>
+              <p class="text-xs text-slate-600 mt-2">Updated <%= new Date(s.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></p>
+            </div>
+          <% }); %>
+        </div>
       </div>
-    </article>
-  </main>
+
+      <!-- Column 3: Delivered -->
+      <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+          <h2 class="text-base font-semibold text-slate-200">Delivered</h2>
+          <span class="ml-auto bg-slate-700 text-slate-300 text-xs font-medium px-2 py-0.5 rounded-full">
+            <%= delivered.length %>
+          </span>
+        </div>
+
+        <div class="space-y-3" id="col-delivered">
+          <% if (delivered.length === 0) { %>
+            <p class="text-slate-500 text-sm text-center py-6">No shipments here</p>
+          <% } %>
+          <% delivered.forEach(function(s) { %>
+            <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 relative group" id="card-<%= s.id %>">
+              <!-- Remove button -->
+              <button
+                onclick="removeShipment('<%= s.id %>')"
+                class="absolute top-3 right-3 text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                title="Remove">
+                ✕
+              </button>
+
+              <!-- Carrier badge -->
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-green-900/50 text-green-300 border border-green-700/50">
+                  <%= s.carrier %>
+                </span>
+                <span class="text-xs text-slate-500 uppercase tracking-wide"><%= s.status.replace(/_/g, ' ') %></span>
+              </div>
+
+              <!-- Tracking number -->
+              <p class="font-mono font-bold text-white text-sm truncate mb-2" title="<%= s.trackingNumber %>">
+                <%= s.trackingNumber %>
+              </p>
+
+              <!-- Details -->
+              <% if (s.currentLocation) { %>
+                <p class="text-xs text-slate-400">📍 <%= s.currentLocation %></p>
+              <% } %>
+              <% if (s.estimatedDelivery) { %>
+                <p class="text-xs text-slate-400 mt-1">🗓 Delivered by <%= new Date(s.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+              <% } %>
+              <p class="text-xs text-slate-600 mt-2">Updated <%= new Date(s.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) %></p>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+    </div><!-- /Kanban Board -->
+  </div><!-- /max-w-7xl -->
+
+  <script>
+    async function removeShipment(id) {
+      try {
+        const res = await fetch(`/api/shipments/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          const card = document.getElementById(`card-${id}`);
+          if (card) {
+            card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 200);
+          }
+        } else {
+          alert('Failed to remove shipment. Please try again.');
+        }
+      } catch (err) {
+        console.error('Error removing shipment:', err);
+        alert('Network error. Please try again.');
+      }
+    }
+  </script>
+
 </body>
 </html>

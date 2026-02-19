@@ -1,42 +1,82 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { shipmentService } from '../services/ShipmentService.js';
+import prisma from '../lib/prisma.js';
 
 export class ViewController {
 
   /**
-   * Render the main dashboard page
+   * Render the main dashboard page with Kanban columns
    */
   async home(req: FastifyRequest, reply: FastifyReply) {
+    const allShipments = await prisma.cachedShipment.findMany({
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const IN_TRANSIT_KEYWORDS = ['IN_TRANSIT', 'TRANSIT', 'OUT_FOR_DELIVERY', 'SHIPPED'];
+    const DELIVERED_KEYWORDS   = ['DELIVERED'];
+
+    const delivered = allShipments.filter(s =>
+      DELIVERED_KEYWORDS.includes(s.status.toUpperCase())
+    );
+
+    const inTransit = allShipments.filter(s =>
+      IN_TRANSIT_KEYWORDS.includes(s.status.toUpperCase())
+    );
+
+    const processing = allShipments.filter(s =>
+      !DELIVERED_KEYWORDS.includes(s.status.toUpperCase()) &&
+      !IN_TRANSIT_KEYWORDS.includes(s.status.toUpperCase())
+    );
+
+    const lastSynced = allShipments.length > 0
+      ? allShipments.reduce((latest, s) =>
+          s.updatedAt > latest ? s.updatedAt : latest,
+          allShipments[0].updatedAt
+        )
+      : null;
+
     return reply.view('index.ejs', {
       title: 'Shipping Dashboard',
+      processing,
+      inTransit,
+      delivered,
+      lastSynced,
     });
   }
 
   /**
-   * Handle HTMX tracking request and return HTML fragment
+   * Handle standard form POST to track a shipment, then redirect to the dashboard
    */
-  async trackFragment(req: FastifyRequest, reply: FastifyReply) {
+  async trackShipment(req: FastifyRequest, reply: FastifyReply) {
     try {
       const body = req.body as { trackingNumber?: string };
       const trackingNumber = body.trackingNumber?.trim();
 
       if (!trackingNumber) {
-        return reply
-          .type('text/html')
-          .send('<div style="color: red; padding: 1rem; border: 1px solid red; border-radius: 4px;">Error: Tracking number is required</div>');
+        return reply.redirect('/?error=missing_tracking_number');
       }
 
-      // Call the shipment service to track the package
-      const shipment = await shipmentService.getShipment(trackingNumber);
+      // Fetch and cache the shipment
+      await shipmentService.getShipment(trackingNumber);
 
-      // Return the shipment card partial
-      return reply.view('partials/shipment-card.ejs', { shipment });
+      // Redirect back to the dashboard so the Kanban board refreshes with the new card
+      return reply.redirect('/');
     } catch (error: any) {
-      // Return error as HTML fragment (not JSON)
-      const errorMessage = error.message || 'Unknown error occurred';
-      return reply
-        .type('text/html')
-        .send(`<div style="color: red; padding: 1rem; border: 1px solid red; border-radius: 4px; background-color: #fee;">Error: ${errorMessage}</div>`);
+      const encoded = encodeURIComponent(error.message || 'Unknown error');
+      return reply.redirect(`/?error=${encoded}`);
+    }
+  }
+
+  /**
+   * Delete a cached shipment by ID
+   */
+  async deleteShipment(req: FastifyRequest, reply: FastifyReply) {
+    const { id } = req.params as { id: string };
+    try {
+      await prisma.cachedShipment.delete({ where: { id } });
+      return reply.status(200).send({ success: true });
+    } catch (error: any) {
+      return reply.status(404).send({ success: false, error: 'Shipment not found' });
     }
   }
 }
