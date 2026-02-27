@@ -61,6 +61,7 @@
       <div class="text-sm text-slate-400 mb-4 space-y-1">
         <p><span class="font-medium text-slate-300">UPS:</span> 1Z + 16 alphanumeric characters (e.g., 1Z999AA10123456784)</p>
         <p><span class="font-medium text-slate-300">USPS:</span> 94/93/92/95 + 20–22 digits (e.g., 9400111899223456789012)</p>
+        <p><span class="font-medium text-slate-300">FedEx:</span> 12 to 20 digits (e.g., 123456789012)</p>
         <p><span class="font-medium text-slate-300">Local:</span> LOC + any characters (e.g., LOC123456789)</p>
       </div>
 
@@ -70,8 +71,8 @@
                name="trackingNumber"
                placeholder="Enter tracking number..."
                required
-               pattern="^(1Z[A-Z0-9]{16}|9[2-5][0-9]{20,22}|LOC[A-Z0-9]+)$"
-               title="Enter a valid tracking number: UPS (1Z + 16 alphanumeric), USPS (94/93/92/95 + 20–22 digits), or Local (LOC + alphanumeric)"
+               pattern="^(1Z[A-Z0-9]{16}|9[2-5][0-9]{20,22}|LOC[A-Z0-9]+|[0-9]{12,20})$"
+               title="Enter a valid tracking number: UPS (1Z + 16 alphanumeric), USPS (94/93/92/95 + 20–22 digits), FedEx (12–20 digits), or Local (LOC + alphanumeric)"
                autocomplete="off"
                class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         <button type="submit"
@@ -80,6 +81,14 @@
         </button>
       </form>
     </div>
+
+    <!-- Error Banner -->
+    <% if (error) { %>
+      <div class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded mb-6 flex items-start gap-3">
+        <span class="text-red-400 text-lg leading-none mt-0.5">⚠</span>
+        <p class="text-sm"><%= error %></p>
+      </div>
+    <% } %>
 
     <!-- Kanban Board -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

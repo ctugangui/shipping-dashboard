@@ -10,9 +10,18 @@ export interface ShipmentEvent {
   status: string; // e.g., "DEPARTURE", "ARRIVAL", "DELIVERED"
 }
 
-export type CarrierType = 'UPS' | 'USPS' | 'FEDEX';
+export type CarrierType = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL';
 
-export type ShipmentStatus = 'TRANSIT' | 'DELIVERED' | 'EXCEPTION' | 'UNKNOWN' | 'PENDING';
+export type ShipmentStatus =
+  | 'TRANSIT'
+  | 'IN_TRANSIT'
+  | 'DELIVERED'
+  | 'EXCEPTION'
+  | 'UNKNOWN'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'OUT_FOR_DELIVERY'
+  | 'SHIPPED';
 
 export interface UnifiedShipment {
   trackingNumber: string;

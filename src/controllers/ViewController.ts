@@ -35,12 +35,17 @@ export class ViewController {
         )
       : null;
 
+    // Extract error message from query string (set by trackShipment on failure)
+    const query = req.query as Record<string, string | undefined>;
+    const error = query.error ?? null;
+
     return reply.view('index.ejs', {
       title: 'Shipping Dashboard',
       processing,
       inTransit,
       delivered,
       lastSynced,
+      error,
     });
   }
 

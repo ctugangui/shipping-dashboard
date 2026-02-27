@@ -235,3 +235,18 @@ Transforming the application from a manual search tool into an automated dashboa
 * **Performance:** Dashboard loads are now near-instant due to the SQLite-first architecture.
 * **Security:** Unauthorized users are redirected to a sleek login page; sessions are persisted for 30 days.
 * **Readiness:** The app is 95% ready for Open Source or personal cloud hosting.
+
+## [2026-02-26] Phase: Enterprise API Integration (FedEx)
+
+### 1. The Challenge
+Integrate FedEx tracking using their modern OAuth2 REST API, navigate their strict testing environment, and handle their deeply nested JSON responses.
+
+### 2. The Solution
+* **Environment Configuration:** Built a dynamic `FEDEX_ENV` toggle to seamlessly switch between `apis-sandbox.fedex.com` and `apis.fedex.com` without touching code.
+* **Error Bubbling:** Refactored the core `ShipmentService` to stop silently caching "Not Found" errors, and passed those errors to the front-end to trigger a new UI warning banner.
+* **Data Parsing:** Mapped FedEx's complex `trackResults.latestStatusDetail` to our standard Kanban columns (`DL` to Delivered, `IT` to In Transit) and extracted city/state location data.
+
+### 3. The Outcome
+* FedEx is now fully integrated in Production mode.
+* The system accurately routes 1Z (UPS) and 12-20 digit (FedEx) numbers to their respective APIs.
+* Unrecognized or invalid tracking numbers now display a clean, user-friendly error on the dashboard instead of crashing the terminal.

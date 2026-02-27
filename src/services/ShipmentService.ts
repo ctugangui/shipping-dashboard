@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import { upsTrackingService } from './UpsTrackingService.js';
 import { uspsTrackingService } from './UspsTrackingService.js';
 import { localCourierService } from './LocalCourierService.js';
+import { fedexTrackingService } from './FedexTrackingService.js';
 import type { UnifiedShipment, ShipmentEvent } from '../types/UnifiedShipment.js';
 
 // Cache configuration
@@ -18,8 +19,8 @@ const CARRIER_ROUTING: Array<{ pattern: RegExp; carrier: CarrierRoute }> = [
   { pattern: /^1Z[A-Z0-9]{16}$/i, carrier: 'UPS' },
   // USPS: Starts with 94, 93, 92, or 95 followed by 20-22 digits
   { pattern: /^(94|93|92|95)\d{20,22}$/, carrier: 'USPS' },
-  // FEDEX: 12-22 digit numbers (check after USPS to avoid conflicts)
-  { pattern: /^\d{12,22}$/, carrier: 'FEDEX' },
+  // FEDEX: 12-20 digit numbers (check after USPS to avoid conflicts)
+  { pattern: /^[0-9]{12,20}$/, carrier: 'FEDEX' },
 ];
 
 /**
@@ -112,8 +113,8 @@ async function fetchFromCarrier(
       return localCourierService.trackShipment(trackingNumber);
 
     case 'FEDEX':
-      // TODO: Implement FedEx when ready
-      throw new Error('FedEx carrier is not yet implemented');
+      console.log(`[ShipmentService] Routing to FEDEX for ${trackingNumber}`);
+      return fedexTrackingService.trackShipment(trackingNumber);
 
     default:
       throw new Error(`Unknown carrier: ${carrier}`);
@@ -136,7 +137,7 @@ class ShipmentService {
     if (!carrier) {
       throw new Error(
         `Unable to determine carrier for tracking number: ${normalizedTrackingNumber}. ` +
-        `Supported formats: UPS (1Z...), USPS (94/93/92/95...), LOCAL (LOC...)`
+        `Supported formats: UPS (1Z...), USPS (94/93/92/95...), FedEx (12-20 digits), LOCAL (LOC...)`
       );
     }
 

@@ -18,6 +18,13 @@ export const config = {
     clientSecret: process.env.USPS_CLIENT_SECRET || '',
     baseUrl: process.env.USPS_BASE_URL || 'https://api.usps.com',
   },
+  fedex: {
+    apiKey: process.env.FEDEX_API_KEY || '',
+    secret: process.env.FEDEX_SECRET || '',
+    accountNumber: process.env.FEDEX_ACCOUNT_NUMBER || '',
+    baseUrl: 'https://apis.fedex.com',
+    sandboxUrl: 'https://apis-sandbox.fedex.com',
+  },
 } as const;
 
 export type Config = typeof config;
