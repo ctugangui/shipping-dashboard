@@ -35,9 +35,10 @@ export class ViewController {
         )
       : null;
 
-    // Extract error message from query string (set by trackShipment on failure)
+    // Extract error and warning messages from query string
     const query = req.query as Record<string, string | undefined>;
     const error = query.error ?? null;
+    const warning = query.warning ?? null;
 
     return reply.view('index.ejs', {
       title: 'Shipping Dashboard',
@@ -46,6 +47,7 @@ export class ViewController {
       delivered,
       lastSynced,
       error,
+      warning,
     });
   }
 
@@ -59,6 +61,11 @@ export class ViewController {
 
       if (!trackingNumber) {
         return reply.redirect('/?error=missing_tracking_number');
+      }
+
+      // Check for duplicate before hitting carrier APIs
+      if (await shipmentService.shipmentExists(trackingNumber)) {
+        return reply.redirect('/?warning=' + encodeURIComponent('Tracking number already exists in your dashboard.'));
       }
 
       // Fetch and cache the shipment

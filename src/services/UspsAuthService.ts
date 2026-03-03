@@ -52,7 +52,11 @@ class UspsAuthService {
   constructor() {
     this.clientId = config.usps.clientId;
     this.clientSecret = config.usps.clientSecret;
-    this.baseUrl = config.usps.baseUrl;
+    // Derive base URL from USPS_ENV: production → apis.usps.com, else sandbox TEM
+    this.baseUrl =
+      config.usps.env === 'production'
+        ? 'https://apis.usps.com'
+        : 'https://apis-tem.usps.com';
 
     if (!this.clientId || !this.clientSecret) {
       console.warn(

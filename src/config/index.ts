@@ -16,7 +16,8 @@ export const config = {
   usps: {
     clientId: process.env.USPS_CLIENT_ID || '',
     clientSecret: process.env.USPS_CLIENT_SECRET || '',
-    baseUrl: process.env.USPS_BASE_URL || 'https://api.usps.com',
+    // 'production' → apis.usps.com  |  anything else → apis-tem.usps.com (sandbox)
+    env: process.env.USPS_ENV || 'sandbox',
   },
   fedex: {
     apiKey: process.env.FEDEX_API_KEY || '',

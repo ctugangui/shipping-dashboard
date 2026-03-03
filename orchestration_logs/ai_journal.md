@@ -250,3 +250,17 @@ Integrate FedEx tracking using their modern OAuth2 REST API, navigate their stri
 * FedEx is now fully integrated in Production mode.
 * The system accurately routes 1Z (UPS) and 12-20 digit (FedEx) numbers to their respective APIs.
 * Unrecognized or invalid tracking numbers now display a clean, user-friendly error on the dashboard instead of crashing the terminal.
+
+## [2026-03-03] Phase: Quality of Life & USPS Integration
+
+### 1. The Challenge
+Prevent users from accidentally spamming the carrier APIs with duplicate tracking numbers, and integrate USPS tracking using their newly updated `v3r2` REST API (which requires specific bulk-array JSON payloads and strict OAuth2 scope validation).
+
+### 2. The Solution
+* **Duplicate Interception:** Implemented a `shipmentExists()` database check within the `ShipmentService`. If a duplicate is detected, the backend skips the API call and passes a `?warning=` parameter to the frontend, rendering a sleek yellow alert banner.
+* **USPS v3r2 Architecture:** Created the `UspsTrackingService` with dynamic `USPS_ENV` routing. Implemented `client_credentials` OAuth2 token caching and mapped the strict `[{ "trackingNumber": "..." }]` array payload required by the new USPS specification.
+
+### 3. The Outcome
+* The application is now protected against duplicate entries, saving API quota and maintaining a clean Kanban board.
+* USPS tracking is officially live in Production, successfully parsing real delivery statuses.
+* The unified dashboard now seamlessly routes, authenticates, and displays live data for UPS, FedEx, USPS, and Local couriers.

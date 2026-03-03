@@ -287,6 +287,17 @@ class ShipmentService {
   }
 
   /**
+   * Check if a shipment already exists in the database cache
+   */
+  async shipmentExists(trackingNumber: string): Promise<boolean> {
+    const normalizedTrackingNumber = trackingNumber.replace(/\s/g, '').toUpperCase();
+    const count = await prisma.cachedShipment.count({
+      where: { trackingNumber: normalizedTrackingNumber },
+    });
+    return count > 0;
+  }
+
+  /**
    * Detect carrier for a tracking number (exposed for debugging)
    */
   detectCarrier(trackingNumber: string): CarrierRoute | null {
