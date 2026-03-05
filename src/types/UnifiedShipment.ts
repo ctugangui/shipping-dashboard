@@ -10,7 +10,7 @@ export interface ShipmentEvent {
   status: string; // e.g., "DEPARTURE", "ARRIVAL", "DELIVERED"
 }
 
-export type CarrierType = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL';
+export type CarrierType = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL' | 'ONTRAC';
 
 export type ShipmentStatus =
   | 'TRANSIT'

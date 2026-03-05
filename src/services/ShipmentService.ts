@@ -3,18 +3,21 @@ import { upsTrackingService } from './UpsTrackingService.js';
 import { uspsTrackingService } from './UspsTrackingService.js';
 import { localCourierService } from './LocalCourierService.js';
 import { fedexTrackingService } from './FedexTrackingService.js';
+import { track123Service } from './Track123Service.js';
 import type { UnifiedShipment, ShipmentEvent } from '../types/UnifiedShipment.js';
 
 // Cache configuration
 const CACHE_TTL_MINUTES = 15;
 
 // Carrier types for routing
-type CarrierRoute = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL';
+type CarrierRoute = 'UPS' | 'USPS' | 'FEDEX' | 'LOCAL' | 'ONTRAC';
 
 // Carrier detection patterns with priority order
 const CARRIER_ROUTING: Array<{ pattern: RegExp; carrier: CarrierRoute }> = [
   // LOCAL: Starts with 'LOC' (for testing)
   { pattern: /^LOC/i, carrier: 'LOCAL' },
+  // ONTRAC: Starts with 1LS, C, D, or S followed by 10+ alphanumerics
+  { pattern: /^(1LS|C|D|S)[A-Z0-9]{10,}$/i, carrier: 'ONTRAC' },
   // UPS: Starts with '1Z' followed by 16 alphanumeric characters
   { pattern: /^1Z[A-Z0-9]{16}$/i, carrier: 'UPS' },
   // USPS: Starts with 94, 93, 92, or 95 followed by 20-22 digits
@@ -116,6 +119,10 @@ async function fetchFromCarrier(
       console.log(`[ShipmentService] Routing to FEDEX for ${trackingNumber}`);
       return fedexTrackingService.trackShipment(trackingNumber);
 
+    case 'ONTRAC':
+      console.log(`[ShipmentService] Routing to TRACK123 (OnTrac) for ${trackingNumber}`);
+      return track123Service.getShipment(trackingNumber);
+
     default:
       throw new Error(`Unknown carrier: ${carrier}`);
   }
@@ -137,7 +144,7 @@ class ShipmentService {
     if (!carrier) {
       throw new Error(
         `Unable to determine carrier for tracking number: ${normalizedTrackingNumber}. ` +
-        `Supported formats: UPS (1Z...), USPS (94/93/92/95...), FedEx (12-20 digits), LOCAL (LOC...)`
+        `Supported formats: UPS (1Z...), USPS (94/93/92/95...), FedEx (12-20 digits), OnTrac (1LS.../C.../D.../S...), LOCAL (LOC...)`
       );
     }
 
@@ -284,6 +291,42 @@ class ShipmentService {
         byCarrier.map((c: { carrier: string; _count: { carrier: number } }) => [c.carrier, c._count.carrier])
       ),
     };
+  }
+
+  /**
+   * Get all non-delivered (active) shipments from the database
+   */
+  async getActiveShipments(): Promise<Array<{ id: string; trackingNumber: string; status: string }>> {
+    return prisma.cachedShipment.findMany({
+      where: {
+        status: {
+          not: 'DELIVERED',
+        },
+      },
+      select: {
+        id: true,
+        trackingNumber: true,
+        status: true,
+      },
+    });
+  }
+
+  /**
+   * Fetch live data for a tracking number and update the database record
+   */
+  async updateShipment(trackingNumber: string): Promise<void> {
+    const normalizedTrackingNumber = trackingNumber.replace(/\s/g, '').toUpperCase();
+
+    const carrier = detectCarrier(normalizedTrackingNumber);
+    if (!carrier) {
+      throw new Error(
+        `Unable to determine carrier for tracking number: ${normalizedTrackingNumber}`
+      );
+    }
+
+    console.log(`[ShipmentService] Refreshing ${normalizedTrackingNumber} (${carrier})`);
+    const freshData = await fetchFromCarrier(normalizedTrackingNumber, carrier);
+    await this.upsertShipmentCache(normalizedTrackingNumber, freshData);
   }
 
   /**

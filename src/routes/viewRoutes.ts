@@ -20,6 +20,11 @@ export default async function viewRoutes(app: FastifyInstance) {
     preHandler: requireAuth(false),
   }, viewController.syncSheets.bind(viewController));
 
+  // Refresh all active (non-delivered) shipments — protected
+  app.post('/refresh', {
+    preHandler: requireAuth(false),
+  }, viewController.refreshActive.bind(viewController));
+
   // Delete a cached shipment by ID — protected (API route → returns 401)
   app.delete('/api/shipments/:id', {
     preHandler: requireAuth(true),

@@ -113,6 +113,29 @@ export class ViewController {
   }
 
   /**
+   * Refresh all active (non-delivered) shipments by re-querying their carrier APIs
+   */
+  async refreshActive(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const activeShipments = await shipmentService.getActiveShipments();
+
+      for (const shipment of activeShipments) {
+        try {
+          await shipmentService.updateShipment(shipment.trackingNumber);
+        } catch {
+          // Skip shipments that fail to update (API error, unknown carrier, etc.)
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      return reply.redirect('/?success=' + encodeURIComponent('Refreshed all active shipments.'));
+    } catch (err: any) {
+      const encoded = encodeURIComponent(err.message || 'Failed to refresh active shipments.');
+      return reply.redirect(`/?error=${encoded}`);
+    }
+  }
+
+  /**
    * Delete a cached shipment by ID
    */
   async deleteShipment(req: FastifyRequest, reply: FastifyReply) {
