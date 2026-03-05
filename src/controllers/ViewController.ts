@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { shipmentService } from '../services/ShipmentService.js';
+import { googleSheetsService } from '../services/GoogleSheetsService.js';
 import prisma from '../lib/prisma.js';
 
 export class ViewController {
@@ -35,10 +36,11 @@ export class ViewController {
         )
       : null;
 
-    // Extract error and warning messages from query string
+    // Extract error, warning, and success messages from query string
     const query = req.query as Record<string, string | undefined>;
     const error = query.error ?? null;
     const warning = query.warning ?? null;
+    const success = query.success ?? null;
 
     return reply.view('index.ejs', {
       title: 'Shipping Dashboard',
@@ -48,6 +50,7 @@ export class ViewController {
       lastSynced,
       error,
       warning,
+      success,
     });
   }
 
@@ -75,6 +78,36 @@ export class ViewController {
       return reply.redirect('/');
     } catch (error: any) {
       const encoded = encodeURIComponent(error.message || 'Unknown error');
+      return reply.redirect(`/?error=${encoded}`);
+    }
+  }
+
+  /**
+   * Sync tracking numbers from Google Sheets.
+   * Skips numbers already in the dashboard; fetches and caches new ones.
+   */
+  async syncSheets(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const trackingNumbers = await googleSheetsService.getTrackingNumbers();
+
+      let newCount = 0;
+      for (const number of trackingNumbers) {
+        const exists = await shipmentService.shipmentExists(number);
+        if (!exists) {
+          try {
+            await shipmentService.getShipment(number);
+            newCount++;
+          } catch {
+            // Skip numbers that fail to resolve (unknown carrier, API error, etc.)
+          }
+        }
+      }
+
+      return reply.redirect(
+        '/?success=' + encodeURIComponent(`Synced ${newCount} new package${newCount !== 1 ? 's' : ''} from Google Sheets.`)
+      );
+    } catch (err: any) {
+      const encoded = encodeURIComponent(err.message || 'Failed to sync from Google Sheets.');
       return reply.redirect(`/?error=${encoded}`);
     }
   }

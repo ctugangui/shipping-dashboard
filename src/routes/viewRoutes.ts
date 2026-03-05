@@ -15,6 +15,11 @@ export default async function viewRoutes(app: FastifyInstance) {
     preHandler: requireAuth(false),
   }, viewController.trackShipment.bind(viewController));
 
+  // Sync tracking numbers from Google Sheets — protected
+  app.post('/sync', {
+    preHandler: requireAuth(false),
+  }, viewController.syncSheets.bind(viewController));
+
   // Delete a cached shipment by ID — protected (API route → returns 401)
   app.delete('/api/shipments/:id', {
     preHandler: requireAuth(true),

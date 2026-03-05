@@ -264,3 +264,19 @@ Prevent users from accidentally spamming the carrier APIs with duplicate trackin
 * The application is now protected against duplicate entries, saving API quota and maintaining a clean Kanban board.
 * USPS tracking is officially live in Production, successfully parsing real delivery statuses.
 * The unified dashboard now seamlessly routes, authenticates, and displays live data for UPS, FedEx, USPS, and Local couriers.
+
+## [2026-03-05] Phase: Google Sheets Ingestion & Automation
+
+### 1. The Challenge
+Automate the data entry process by pulling tracking numbers directly from a messy, real-world Google Sheet. The sheet contains metadata in row 1, headers in row 2, multiline cells, and quantity suffixes (e.g., "x 9") that would break the carrier APIs.
+
+### 2. The Solution
+* **Google Auth & Service Account:** Set up a Google Cloud Service Account and integrated `googleapis` to fetch sheet data securely in the background.
+* **Dynamic Column Radar:** Built a 2D scanning algorithm in `GoogleSheetsService` that searches the first 10 rows to dynamically anchor the "Tracking" column, ensuring the code doesn't break if the spreadsheet layout changes.
+* **Aggressive Data Cleaning:** Implemented regex and string manipulation to split newlines and strip out quantity suffixes, ensuring carriers only receive pristine tracking strings.
+* **Bulk Ingestion:** Created a `/sync` route that checks the database for duplicates before aggressively fetching and caching new shipments.
+
+### 3. The Outcome
+* The dashboard now features a "Sync from Sheets" button that securely reads the Amazon Purchase Log.
+* Successfully synced 25 packages across USPS, UPS, and FedEx in seconds.
+* OAuth caching functioned perfectly during the bulk sync, preventing API rate limits.
