@@ -280,3 +280,18 @@ Automate the data entry process by pulling tracking numbers directly from a mess
 * The dashboard now features a "Sync from Sheets" button that securely reads the Amazon Purchase Log.
 * Successfully synced 25 packages across USPS, UPS, and FedEx in seconds.
 * OAuth caching functioned perfectly during the bulk sync, preventing API rate limits.
+
+## [2026-03-05] Phase: Aggregator Integration & Async Polling (Track123)
+
+### 1. The Challenge
+Integrate enterprise-gated regional carriers (like OnTrac/LaserShip) that do not grant direct API access to standard developers. Additionally, we needed to navigate the asynchronous limitations of third-party API aggregators, which require registering a tracking number and waiting for background scraping to complete before data becomes available.
+
+### 2. The Solution
+* **API Aggregation Strategy:** Integrated Track123 (`v2.1`) as a universal fallback provider for OnTrac (`1LSC...` regex matches) using standard HTTP `fetch` to maintain codebase consistency.
+* **Async Registration Lifecycle:** Built an auto-import flow in `Track123Service`. If Track123 returns a "Not Registered" error, the system automatically imports the number and temporarily parks the shipment in the `PROCESSING` column, preventing the sync process from crashing while the aggregator scrapes the data in the background.
+* **Polling Updater (Refresh Active):** Created a `/refresh` route and UI button that fetches all active (`PROCESSING` or `IN_TRANSIT`) shipments from the database and re-queries the carriers for live data. Implemented a 500ms throttle between calls to safely respect Track123's 5 requests/sec rate limit.
+
+### 3. The Outcome
+* Successfully routed, registered, and tracked 16 OnTrac packages through the Track123 aggregator.
+* Packages gracefully and automatically transitioned from the "Processing" column to "Delivered" via the new refresh polling functionality.
+* The system's architecture is now fully capable of handling asynchronous carrier scraping and is prepped for true background automation (Cron jobs).
