@@ -52,8 +52,12 @@ interface UspsTrackingResult {
   expectedDeliveryTimeStamp?: string;
   destinationCity?: string;
   destinationState?: string;
+  deliveryDateExpectation?: {
+    expectedDeliveryDate?: string;
+  };
   trackingEvents?: Array<{
     eventTimestamp?: string;
+    GMTTimestamp?: string;
     eventType?: string;
     eventCode?: string;
     eventCity?: string;
@@ -312,6 +316,9 @@ class UspsTrackingService {
     trackingNumber: string,
     raw: UspsTrackingResult[]
   ): UnifiedShipment {
+    // Log the raw USPS response for debugging field structure
+    console.log('[UspsTrackingService] Raw USPS API response:', JSON.stringify(raw, null, 2));
+
     // The API returns an array; grab the first result for our single tracking number
     const result = raw?.[0];
 
@@ -341,24 +348,21 @@ class UspsTrackingService {
     const status = mapUspsStatus(statusText);
 
     // ── Current Location ──────────────────────────────────────────────────────
-    let currentLocation: string | null = null;
-
-    const city = result.destinationCity ?? result.TrackSummary?.eventCity ?? null;
-    const state = result.destinationState ?? result.TrackSummary?.eventState ?? null;
-
-    if (city || state) {
-      currentLocation = [city, state].filter(Boolean).join(', ');
-    }
+    // Extract city and state from the most recent tracking event (index 0 = most recent).
+    const latestEvent = result.trackingEvents?.[0];
+    const city = latestEvent?.eventCity;
+    const state = latestEvent?.eventState;
+    const currentLocation = (city && state) ? `${city}, ${state}` : 'Unknown Location';
 
     // ── Estimated Delivery ────────────────────────────────────────────────────
-    let estimatedDelivery: string | null = null;
-    if (result.expectedDeliveryTimeStamp) {
-      try {
-        estimatedDelivery = new Date(result.expectedDeliveryTimeStamp).toISOString();
-      } catch {
-        estimatedDelivery = null;
-      }
-    }
+    // Prefer deliveryDateExpectation.expectedDeliveryDate, then fall back to
+    // the latest event's eventTimestamp or GMTTimestamp.
+    const rawDate =
+      result.deliveryDateExpectation?.expectedDeliveryDate ??
+      latestEvent?.eventTimestamp ??
+      latestEvent?.GMTTimestamp;
+    const expectedDelivery = rawDate ? new Date(rawDate) : null;
+    const estimatedDelivery = expectedDelivery ? expectedDelivery.toISOString() : null;
 
     // ── Events ────────────────────────────────────────────────────────────────
     const events: UnifiedShipment['events'] = [];

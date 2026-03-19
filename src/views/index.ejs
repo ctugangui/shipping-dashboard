@@ -28,8 +28,8 @@
         <p class="text-slate-400">Track packages from UPS, USPS, and Local Couriers</p>
       </div>
 
-      <!-- Live Sync Indicator + Logout -->
-      <div class="flex items-center gap-4">
+      <!-- Live Sync Indicator + Actions -->
+      <div class="flex items-center gap-3 flex-wrap justify-end">
         <div class="flex items-center gap-2">
           <span class="relative flex h-3 w-3">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -44,6 +44,22 @@
           </span>
         </div>
 
+        <!-- Global Search Bar -->
+        <form action="/" method="GET" class="inline-flex">
+          <input type="text" name="q" value="<%= searchQuery %>" placeholder="Search tracking..."
+                 class="bg-gray-800 text-white rounded-l px-3 py-2 border border-gray-700 focus:outline-none text-sm w-44">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-r text-sm transition-colors">Search</button>
+        </form>
+        <% if (searchQuery) { %>
+          <a href="/" class="text-sm text-slate-400 hover:text-white underline underline-offset-2 transition-colors">Clear Search</a>
+        <% } %>
+
+        <!-- View Archive link -->
+        <a href="/archive"
+           class="text-sm text-slate-400 hover:text-slate-200 border border-slate-600 hover:border-slate-400 px-3 py-1.5 rounded-lg transition-colors">
+          🗄 View Archive
+        </a>
+
         <!-- Sync from Sheets button -->
         <form action="/sync" method="POST" class="inline">
           <button type="submit"
@@ -53,7 +69,9 @@
         </form>
 
         <!-- Refresh Active button -->
-        <form action="/refresh" method="POST" class="inline"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Refresh Active</button></form>
+        <form action="/refresh" method="POST" class="inline">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">Refresh Active</button>
+        </form>
 
         <!-- Logout button -->
         <form action="/logout" method="POST">

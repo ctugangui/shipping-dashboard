@@ -6,12 +6,15 @@ import prisma from '../lib/prisma.js';
 export class ViewController {
 
   /**
-   * Render the main dashboard page with Kanban columns
+   * Render the main dashboard page with Kanban columns.
+   * Supports optional ?q= search query to filter by tracking number.
+   * Auto-archives DELIVERED shipments older than 7 days (they won't appear here).
    */
   async home(req: FastifyRequest, reply: FastifyReply) {
-    const allShipments = await prisma.cachedShipment.findMany({
-      orderBy: { updatedAt: 'desc' },
-    });
+    const query = req.query as Record<string, string | undefined>;
+    const searchQuery = query.q as string | undefined;
+
+    const allShipments = await shipmentService.getRecentShipments(searchQuery);
 
     const IN_TRANSIT_KEYWORDS = ['IN_TRANSIT', 'TRANSIT', 'OUT_FOR_DELIVERY', 'SHIPPED'];
     const DELIVERED_KEYWORDS   = ['DELIVERED'];
@@ -37,7 +40,6 @@ export class ViewController {
       : null;
 
     // Extract error, warning, and success messages from query string
-    const query = req.query as Record<string, string | undefined>;
     const error = query.error ?? null;
     const warning = query.warning ?? null;
     const success = query.success ?? null;
@@ -51,6 +53,19 @@ export class ViewController {
       error,
       warning,
       success,
+      searchQuery: searchQuery ?? '',
+    });
+  }
+
+  /**
+   * Render the archive page with DELIVERED shipments older than 7 days.
+   */
+  async renderArchive(req: FastifyRequest, reply: FastifyReply) {
+    const archivedShipments = await shipmentService.getArchivedShipments();
+
+    return reply.view('archive.ejs', {
+      title: 'Archive — Shipping Dashboard',
+      archivedShipments,
     });
   }
 
@@ -84,25 +99,11 @@ export class ViewController {
 
   /**
    * Sync tracking numbers from Google Sheets.
-   * Skips numbers already in the dashboard; fetches and caches new ones.
+   * Delegates to ShipmentService.runSheetSync() and redirects with result.
    */
   async syncSheets(req: FastifyRequest, reply: FastifyReply) {
     try {
-      const trackingNumbers = await googleSheetsService.getTrackingNumbers();
-
-      let newCount = 0;
-      for (const number of trackingNumbers) {
-        const exists = await shipmentService.shipmentExists(number);
-        if (!exists) {
-          try {
-            await shipmentService.getShipment(number);
-            newCount++;
-          } catch {
-            // Skip numbers that fail to resolve (unknown carrier, API error, etc.)
-          }
-        }
-      }
-
+      const newCount = await shipmentService.runSheetSync();
       return reply.redirect(
         '/?success=' + encodeURIComponent(`Synced ${newCount} new package${newCount !== 1 ? 's' : ''} from Google Sheets.`)
       );
@@ -113,21 +114,12 @@ export class ViewController {
   }
 
   /**
-   * Refresh all active (non-delivered) shipments by re-querying their carrier APIs
+   * Refresh all active (non-delivered) shipments by re-querying their carrier APIs.
+   * Delegates to ShipmentService.runActiveRefresh() and redirects with result.
    */
   async refreshActive(req: FastifyRequest, reply: FastifyReply) {
     try {
-      const activeShipments = await shipmentService.getActiveShipments();
-
-      for (const shipment of activeShipments) {
-        try {
-          await shipmentService.updateShipment(shipment.trackingNumber);
-        } catch {
-          // Skip shipments that fail to update (API error, unknown carrier, etc.)
-        }
-        await new Promise(r => setTimeout(r, 500));
-      }
-
+      await shipmentService.runActiveRefresh();
       return reply.redirect('/?success=' + encodeURIComponent('Refreshed all active shipments.'));
     } catch (err: any) {
       const encoded = encodeURIComponent(err.message || 'Failed to refresh active shipments.');

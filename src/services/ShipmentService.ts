@@ -346,6 +346,145 @@ class ShipmentService {
   detectCarrier(trackingNumber: string): CarrierRoute | null {
     return detectCarrier(trackingNumber.replace(/\s/g, '').toUpperCase());
   }
+
+  /**
+   * Sync tracking numbers from Google Sheets.
+   * Fetches all numbers, skips existing ones, and saves new ones.
+   * Returns the count of newly added shipments.
+   */
+  async runSheetSync(): Promise<number> {
+    try {
+      const { googleSheetsService } = await import('./GoogleSheetsService.js');
+      const trackingNumbers = await googleSheetsService.getTrackingNumbers();
+
+      let newCount = 0;
+      for (const number of trackingNumbers) {
+        const exists = await this.shipmentExists(number);
+        if (!exists) {
+          try {
+            await this.getShipment(number);
+            newCount++;
+          } catch (err) {
+            console.error(`[ShipmentService] runSheetSync: failed to fetch ${number}:`, err);
+          }
+        }
+      }
+
+      console.log(`[ShipmentService] runSheetSync complete: ${newCount} new shipment(s) added.`);
+      return newCount;
+    } catch (err) {
+      console.error('[ShipmentService] runSheetSync error:', err);
+      return 0;
+    }
+  }
+
+  /**
+   * Get shipments for the main dashboard with optional search query.
+   * - If searchQuery is provided: return ALL shipments where trackingNumber contains the query (case-insensitive).
+   * - If no searchQuery: return PROCESSING and IN_TRANSIT shipments, plus DELIVERED shipments updated within the last 7 days.
+   */
+  async getRecentShipments(searchQuery?: string): Promise<Array<{
+    id: string;
+    trackingNumber: string;
+    carrier: string;
+    status: string;
+    estimatedDelivery: Date | null;
+    currentLocation: string | null;
+    updatedAt: Date;
+  }>> {
+    if (searchQuery && searchQuery.trim()) {
+      // Search mode: return all shipments matching the tracking number query
+      return prisma.cachedShipment.findMany({
+        where: {
+          trackingNumber: {
+            contains: searchQuery.trim().toUpperCase(),
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+    }
+
+    // Default mode: active shipments + recently delivered (within 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return prisma.cachedShipment.findMany({
+      where: {
+        OR: [
+          // All non-delivered statuses
+          {
+            status: {
+              notIn: ['DELIVERED'],
+            },
+          },
+          // Delivered but within the last 7 days (use estimatedDelivery, fall back to updatedAt if null)
+          {
+            status: 'DELIVERED',
+            OR: [
+              { estimatedDelivery: { gte: sevenDaysAgo } },
+              { estimatedDelivery: null, updatedAt: { gte: sevenDaysAgo } },
+            ],
+          },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  /**
+   * Get archived shipments: DELIVERED shipments older than 7 days, ordered by updatedAt descending.
+   */
+  async getArchivedShipments(): Promise<Array<{
+    id: string;
+    trackingNumber: string;
+    carrier: string;
+    status: string;
+    estimatedDelivery: Date | null;
+    currentLocation: string | null;
+    updatedAt: Date;
+  }>> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return prisma.cachedShipment.findMany({
+      where: {
+        status: 'DELIVERED',
+        OR: [
+          { estimatedDelivery: { lt: sevenDaysAgo } },
+          { estimatedDelivery: null, updatedAt: { lt: sevenDaysAgo } },
+        ],
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  /**
+   * Refresh all active (non-delivered) shipments by re-querying their carrier APIs.
+   * Waits 500ms between each update to avoid rate limiting.
+   * Returns the count of successfully updated shipments.
+   */
+  async runActiveRefresh(): Promise<number> {
+    try {
+      const activeShipments = await this.getActiveShipments();
+
+      let updatedCount = 0;
+      for (const shipment of activeShipments) {
+        try {
+          await this.updateShipment(shipment.trackingNumber);
+          updatedCount++;
+        } catch (err) {
+          console.error(`[ShipmentService] runActiveRefresh: failed to update ${shipment.trackingNumber}:`, err);
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      console.log(`[ShipmentService] runActiveRefresh complete: ${updatedCount} shipment(s) updated.`);
+      return updatedCount;
+    } catch (err) {
+      console.error('[ShipmentService] runActiveRefresh error:', err);
+      return 0;
+    }
+  }
 }
 
 // Export singleton instance

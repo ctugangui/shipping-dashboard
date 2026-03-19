@@ -1,5 +1,7 @@
 import { buildApp } from './app.js';
 import { config } from './config/index.js';
+import { startCronJobs } from './jobs/cron.js';
+import { shipmentService } from './services/ShipmentService.js';
 
 async function start(): Promise<void> {
   const app = await buildApp();
@@ -12,6 +14,9 @@ async function start(): Promise<void> {
 
     console.log(`🚀 Server is running on http://${config.host}:${config.port}`);
     console.log(`📊 Health check: http://${config.host}:${config.port}/health`);
+
+    // Start background cron jobs after server is listening
+    startCronJobs(shipmentService);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

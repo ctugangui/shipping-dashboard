@@ -25,6 +25,11 @@ export default async function viewRoutes(app: FastifyInstance) {
     preHandler: requireAuth(false),
   }, viewController.refreshActive.bind(viewController));
 
+  // Archive page — protected
+  app.get('/archive', {
+    preHandler: requireAuth(false),
+  }, viewController.renderArchive.bind(viewController));
+
   // Delete a cached shipment by ID — protected (API route → returns 401)
   app.delete('/api/shipments/:id', {
     preHandler: requireAuth(true),

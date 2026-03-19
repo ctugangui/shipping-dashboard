@@ -90,7 +90,7 @@ export class GoogleSheetsService {
       // strip quantity suffixes (e.g. " x 9", "x 1"), and filter blanks
       const cleaned = cellValue
         .split('\n')
-        .map((line) => line.replace(/ ?x ?\d+/gi, '').trim())
+        .map((line) => line.replace(/\s+x\s*\d+$/i, '').trim())
         .filter((line) => line.length > 0);
 
       trackingNumbers.push(...cleaned);
