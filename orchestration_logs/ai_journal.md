@@ -295,3 +295,18 @@ Integrate enterprise-gated regional carriers (like OnTrac/LaserShip) that do not
 * Successfully routed, registered, and tracked 16 OnTrac packages through the Track123 aggregator.
 * Packages gracefully and automatically transitioned from the "Processing" column to "Delivered" via the new refresh polling functionality.
 * The system's architecture is now fully capable of handling asynchronous carrier scraping and is prepped for true background automation (Cron jobs).
+
+## [2026-03-19] Phase: UI Polish, Data Integrity, & Archiving
+
+### 1. The Challenge
+As the automation engine successfully pulled in dozens of tracking numbers, the UI became cluttered with historical deliveries. Furthermore, real-world edge cases exposed minor bugs: UPS numbers containing an 'X' were being truncated, and the USPS API changed its payload structure, causing missing location and date data.
+
+### 2. The Solution
+* **Regex Refinement:** Updated the `GoogleSheetsService` cleaner to strictly anchor the quantity-stripping regex to the end of the line, preserving UPS tracking strings.
+* **Auto-Archive & Search:** Built a dynamic filtering system in `ShipmentService`. The main dashboard now only displays active shipments and deliveries from the last 7 days (calculated via `expectedDelivery`). Built a dedicated `/archive` page for historical data and added a global search bar to bypass filters.
+* **USPS Schema Fix:** Updated the `UspsTrackingService` to parse the new root-array OpenAPI schema, correctly extracting `eventCity`, `eventState`, and `eventTimestamp` to populate the UI cards.
+
+### 3. The Outcome
+* The dashboard remains visually clean and performant, effortlessly handling 50+ packages.
+* All supported carriers (UPS, FedEx, USPS, OnTrac) now perfectly render custom location pins and delivery dates.
+* The codebase is officially stable and ready for deployment.
